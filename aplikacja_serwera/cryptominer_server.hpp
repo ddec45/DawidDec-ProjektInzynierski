@@ -73,4 +73,10 @@ public:
     std::shared_ptr<http_response> render(const http_request& req);
 };
 
+class miner_instance_statistics_list: public http_resource{
+public:
+    std::shared_ptr<http_response> render_GET(const http_request& req);
+    std::shared_ptr<http_response> render(const http_request& req);
+};
+
 #endif /* CRYPTOMINER_SERVER_H */

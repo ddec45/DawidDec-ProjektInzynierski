@@ -98,3 +98,25 @@ std::shared_ptr<http_response> miner_instance_start_resource::render_PUT(const h
     }
 }
 NOTFOUND_METHOD_INSERTER(miner_instance_start_resource)
+
+std::shared_ptr<http_response> miner_instance_statistics_list::render_GET(const http_request& req){
+    request_get_notify(req);
+    try{
+        std::stringstream response_content;
+        response_content << "[";
+        int size = miner_instance_info_map.size();
+        int i = 0;
+        for(auto miner_instance : miner_instance_info_map){
+            response_content <<  "{\"miner_instance_id\":" << miner_instance.second.id << ",\"stats\":\"" << miner_instance.second.statistics << "\"}";
+                if(++i < size){
+                    response_content << ",";
+                }
+        }
+        response_content << "]";
+        return std::shared_ptr<http_response>(new string_response(response_content.str(), 200, "application/json"));
+    }
+    catch(...){
+        return std::shared_ptr<http_response>(new string_response("error", 400));
+    }
+}
+NOTFOUND_METHOD_INSERTER(miner_instance_statistics_list)
