@@ -75,9 +75,11 @@ int main(int argc, char** argv) {
     hello_world_resource hwr;
     json_resource jr;
     miner_application_list_resource malr;
+    miner_instance_start_resource misr;
     ws.register_resource("/hello", &hwr);
     ws.register_resource("/json", &jr);
     ws.register_resource("/user/miner/application/list", &malr);
+    ws.register_resource("/user/miner/instance/start/{miner_app_id}", &misr);
     ws.start(false);
     puts("Cryptominer server has started.");
 

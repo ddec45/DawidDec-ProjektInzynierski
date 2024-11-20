@@ -1,1 +1,4 @@
 .vscode/c_cpp_properties.json
+aplikacja_serwera/key.pem
+aplikacja_serwera/cert.pem
+aplikacja_serwera/log.txt
