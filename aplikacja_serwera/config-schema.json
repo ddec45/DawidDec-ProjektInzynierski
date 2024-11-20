@@ -1,0 +1,20 @@
+{
+	"user_api_key": "filename",
+	"admin_api_key": "filename",
+	"ssl_certificate": "filename",
+	"ssl_key": "filename",
+
+	"max_nr_of_miner_instances": "integer", 
+	"instance_statistics_length": "nr_of_chars",
+	"miner_applications":
+	[
+		{
+			"filename": "filename",
+			"id": "integer",
+			"name": "string",
+			"description": "string"
+		}
+	],
+
+	"update_period": "seconds"
+}
