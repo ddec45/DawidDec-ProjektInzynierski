@@ -50,13 +50,29 @@ std::shared_ptr<http_response> miner_application_list_resource::render_GET(const
 }
 NOTFOUND_METHOD_INSERTER(miner_application_list_resource)
 
+std::shared_ptr<http_response> miner_application_get_resource::render_GET(const http_request& req){
+    request_get_notify(req);
+    try{
+        int miner_app_id = std::stoi(req.get_arg("miner_app_id"));
+        miner_application_info miner_app = miner_application_info_map.at(miner_app_id);
+        std::stringstream response_content;
+        response_content <<  "{\"id\":" << miner_app.id << ",\"name\":\"" << miner_app.name
+            << "\",\"description\":\"" << miner_app.description << "\"}";
+        return std::shared_ptr<http_response>(new string_response(response_content.str(), 200, "application/json"));
+    }
+    catch(...){
+        return std::shared_ptr<http_response>(new string_response("error", 400));
+    }
+}
+NOTFOUND_METHOD_INSERTER(miner_application_get_resource)
+
 std::shared_ptr<http_response> miner_instance_start_resource::render_PUT(const http_request& req){
     static int id_cnt = 0;
 
     request_get_notify(req);
     try{
         int miner_app_id = std::stoi(req.get_arg("miner_app_id"));
-        auto miner_app = miner_application_info_map.at(miner_app_id);
+        miner_application_info miner_app = miner_application_info_map.at(miner_app_id);
 
         ondemand::parser parser;
         std::string json(req.get_content());
@@ -68,10 +84,6 @@ std::shared_ptr<http_response> miner_instance_start_resource::render_PUT(const h
         std::string input_arguments = std::string(sv);
         //std::cout << input_arguments << std::endl;
 
-        // char** argv;
-        // *argv = (char*)malloc(sizeof(char)*(input_arguments.size()+1));
-        // memcpy(*argv, miner_app.filename.data(), input_arguments.size()+1);
-
         miner_instance_info obj;
         obj.id = ++id_cnt;
         obj.name = miner_app.name;
@@ -79,7 +91,16 @@ std::shared_ptr<http_response> miner_instance_start_resource::render_PUT(const h
         obj.description = miner_app.description;
         obj.statistics = "Put statistics info here.";
         obj.update_timestamp = 0;
-        miner_instance_info_map.insert({obj.id, obj});
+
+        mtx.lock();
+        try{
+            miner_instance_info_map.insert({obj.id, obj});
+        }
+        catch(...){
+            mtx.unlock();
+            return std::shared_ptr<http_response>(new string_response("error", 500));
+        }
+        mtx.unlock();
 
         pid_t pid = fork();
         if(pid == 0){
@@ -99,19 +120,31 @@ std::shared_ptr<http_response> miner_instance_start_resource::render_PUT(const h
 }
 NOTFOUND_METHOD_INSERTER(miner_instance_start_resource)
 
-std::shared_ptr<http_response> miner_instance_statistics_list::render_GET(const http_request& req){
+std::shared_ptr<http_response> miner_instance_list_resource::render_GET(const http_request& req){
     request_get_notify(req);
     try{
         std::stringstream response_content;
         response_content << "[";
-        int size = miner_instance_info_map.size();
-        int i = 0;
-        for(auto miner_instance : miner_instance_info_map){
-            response_content <<  "{\"miner_instance_id\":" << miner_instance.second.id << ",\"stats\":\"" << miner_instance.second.statistics << "\"}";
-                if(++i < size){
-                    response_content << ",";
-                }
+
+        mtx.lock();
+        try{
+            int size = miner_instance_info_map.size();
+            int i = 0;
+            for(auto miner_instance : miner_instance_info_map){
+                response_content <<  "{\"id\":" << miner_instance.second.id << ",\"name\":\"" << miner_instance.second.name
+                    << "\",\"miner_app_id\":\"" << miner_instance.second.miner_app_id
+                    << "\",\"description\":\"" << miner_instance.second.description << "\"}";
+                    if(++i < size){
+                        response_content << ",";
+                    }
+            }
         }
+        catch(...){
+            mtx.unlock();
+            return std::shared_ptr<http_response>(new string_response("error", 500));
+        }
+        mtx.unlock();
+
         response_content << "]";
         return std::shared_ptr<http_response>(new string_response(response_content.str(), 200, "application/json"));
     }
@@ -119,4 +152,61 @@ std::shared_ptr<http_response> miner_instance_statistics_list::render_GET(const 
         return std::shared_ptr<http_response>(new string_response("error", 400));
     }
 }
-NOTFOUND_METHOD_INSERTER(miner_instance_statistics_list)
+NOTFOUND_METHOD_INSERTER(miner_instance_list_resource)
+
+std::shared_ptr<http_response> miner_instance_statistics_list_resource::render_GET(const http_request& req){
+    request_get_notify(req);
+    try{
+        std::stringstream response_content;
+        response_content << "[";
+        
+        mtx.lock();
+        try{
+            int size = miner_instance_info_map.size();
+            int i = 0;
+            for(auto miner_instance : miner_instance_info_map){
+                response_content << "{\"miner_instance_id\":" << miner_instance.second.id << ",\"stats\":\"" << miner_instance.second.statistics << "\"}";
+                    if(++i < size){
+                        response_content << ",";
+                    }
+            }
+        }
+        catch(...){
+            mtx.unlock();
+            return std::shared_ptr<http_response>(new string_response("error", 500));
+        }
+        mtx.unlock();
+
+        response_content << "]";
+        return std::shared_ptr<http_response>(new string_response(response_content.str(), 200, "application/json"));
+    }
+    catch(...){
+        return std::shared_ptr<http_response>(new string_response("error", 400));
+    }
+}
+NOTFOUND_METHOD_INSERTER(miner_instance_statistics_list_resource)
+
+std::shared_ptr<http_response> miner_instance_statistics_get_resource::render_GET(const http_request& req){
+    request_get_notify(req);
+    try{
+        std::stringstream response_content;  
+        
+        mtx.lock();
+        try{
+            int miner_instance_id = std::stoi(req.get_arg("miner_instance_id"));
+            miner_instance_info miner_instance = miner_instance_info_map.at(miner_instance_id);
+            response_content << "{\"miner_instance_id\":" << miner_instance.id << ",\"stats\":\"" << miner_instance.statistics << "\"}";
+        }
+        catch(...){
+            mtx.unlock();
+            return std::shared_ptr<http_response>(new string_response("error", 500));
+        }
+        mtx.unlock();
+
+        return std::shared_ptr<http_response>(new string_response(response_content.str(), 200, "application/json"));
+    }
+    catch(...){
+        return std::shared_ptr<http_response>(new string_response("error", 400));
+    }
+}
+NOTFOUND_METHOD_INSERTER(miner_instance_statistics_get_resource)

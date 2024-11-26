@@ -2,3 +2,5 @@
 aplikacja_serwera/key.pem
 aplikacja_serwera/cert.pem
 aplikacja_serwera/log.txt
+aplikacja_serwera/simdjson.cpp
+aplikacja_serwera/simdjson.hpp

@@ -10,8 +10,6 @@ using namespace simdjson;
 #include <vector>
 #include <unordered_map>
 
-// #define SIMDJSON_ERROR_CHECK(error) if(error) { \
-//     std::cerr << simdjson::error_message(error) << std::endl; return EXIT_FAILURE; }
 #define ERROR_MESSAGE_STRING(message) ""
 
 //std::unique_ptr<std::string> config_file_content_ptr;
@@ -22,6 +20,9 @@ ondemand::document config_file;
 
 std::unordered_map<int, miner_instance_info> miner_instance_info_map;
 std::unordered_map<int, miner_application_info> miner_application_info_map;
+config_file_content_class config_file_content_object;
+
+std::mutex mtx;
 
 int main(int argc, char** argv) {
     puts("Initializing cryptominer server...");
@@ -43,6 +44,14 @@ int main(int argc, char** argv) {
         simdjson::padded_string padded_json(json);
         config_file = config_file_parser.iterate(padded_json);
 
+        config_file_content_object.user_api_key = config_file["user_api_key"].get_string().value();
+        config_file_content_object.admin_api_key = config_file["admin_api_key"].get_string().value();
+        config_file_content_object.ssl_certificate = config_file["ssl_certificate"].get_string().value();
+        config_file_content_object.ssl_key = config_file["ssl_key"].get_string().value();
+        config_file_content_object.max_nr_of_miner_instances = config_file["max_nr_of_miner_instances"].get_int64();
+        config_file_content_object.instance_statistics_length = config_file["instance_statistics_length"].get_int64();
+        config_file_content_object.update_period = config_file["update_period"].get_int64();
+
         auto miner_app_array = config_file["miner_applications"].get_array();
         int miner_app_array_length = miner_app_array.count_elements();
 
@@ -57,10 +66,12 @@ int main(int argc, char** argv) {
             obj.description = std::string(sv.begin(), sv.end());
             int key = obj.id;
             miner_application_info_map.insert({obj.id, obj});
+            //config_file_content_object.miner_applications.insert({obj.id, obj});
         }
+        //int max_nr_of_miner_instances = config_file["max_nr_of_miner_instances"].get_int64();
 
-        int max_nr_of_miner_instances = config_file["max_nr_of_miner_instances"].get_int64();
-        std::cout << max_nr_of_miner_instances << std::endl;
+
+        //std::cout << max_nr_of_miner_instances << std::endl;
     // }
     // catch(...){
     //     puts("Incorrect config file!");
@@ -75,13 +86,19 @@ int main(int argc, char** argv) {
     hello_world_resource hwr;
     json_resource jr;
     miner_application_list_resource malr;
+    miner_application_get_resource magr;
     miner_instance_start_resource misr;
-    miner_instance_statistics_list misl;
+    miner_instance_list_resource milr;
+    miner_instance_statistics_list_resource mislr;
+    miner_instance_statistics_get_resource misgr;
     ws.register_resource("/hello", &hwr);
     ws.register_resource("/json", &jr);
     ws.register_resource("/user/miner/application/list", &malr);
+    ws.register_resource("/user/miner/application/{miner_app_id}", &magr);
     ws.register_resource("/user/miner/instance/start/{miner_app_id}", &misr);
-    ws.register_resource("/user/miner/instance/statistics/list", &misl);
+    ws.register_resource("/user/miner/instance/list", &milr);
+    ws.register_resource("/user/miner/instance/statistics/list", &mislr);
+    ws.register_resource("/user/miner/instance/statistics/{miner_instance_id}", &misgr);
     ws.start(false);
     puts("Cryptominer server has started.");
 

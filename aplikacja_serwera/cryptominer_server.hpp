@@ -11,6 +11,7 @@ using namespace simdjson;
 #include <memory>
 #include <vector>
 #include <unordered_map>
+#include <mutex>
 
 #include <unistd.h>  
 #include <sys/errno.h>
@@ -23,6 +24,16 @@ using namespace simdjson;
     return std::shared_ptr<http_response>(new string_response("Not Found", 404)); \
 }
 
+struct config_file_content_class{
+    std::string user_api_key;
+	std::string admin_api_key;
+	std::string ssl_certificate;
+	std::string ssl_key;
+	int max_nr_of_miner_instances;
+	int instance_statistics_length;
+	//std::unordered_map<int, miner_application_info> miner_applications;
+	int update_period;
+};
 
 struct miner_instance_info{
     int id;
@@ -46,7 +57,9 @@ extern ondemand::document config_file;
 
 extern std::unordered_map<int, miner_instance_info> miner_instance_info_map;
 extern std::unordered_map<int, miner_application_info> miner_application_info_map;
+extern config_file_content_class config_file_content_object;
 
+extern std::mutex mtx;
 
 void request_get_notify();
 
@@ -67,13 +80,31 @@ public:
     std::shared_ptr<http_response> render(const http_request& req);
 };
 
+class miner_application_get_resource: public http_resource{
+public:
+    std::shared_ptr<http_response> render_GET(const http_request& req);
+    std::shared_ptr<http_response> render(const http_request& req);
+};
+
 class miner_instance_start_resource: public http_resource{
 public:
     std::shared_ptr<http_response> render_PUT(const http_request& req);
     std::shared_ptr<http_response> render(const http_request& req);
 };
 
-class miner_instance_statistics_list: public http_resource{
+class miner_instance_list_resource: public http_resource{
+public:
+    std::shared_ptr<http_response> render_GET(const http_request& req);
+    std::shared_ptr<http_response> render(const http_request& req);
+};
+
+class miner_instance_statistics_list_resource: public http_resource{
+public:
+    std::shared_ptr<http_response> render_GET(const http_request& req);
+    std::shared_ptr<http_response> render(const http_request& req);
+};
+
+class miner_instance_statistics_get_resource: public http_resource{
 public:
     std::shared_ptr<http_response> render_GET(const http_request& req);
     std::shared_ptr<http_response> render(const http_request& req);
