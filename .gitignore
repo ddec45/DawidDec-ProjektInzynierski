@@ -4,3 +4,8 @@ aplikacja_serwera/cert.pem
 aplikacja_serwera/log.txt
 aplikacja_serwera/simdjson.cpp
 aplikacja_serwera/simdjson.hpp
+aplikacja_serwera/cryptominer_server.o
+aplikacja_serwera/cryptominer_server
+aplikacja_serwera/xmrig_miner_handler.o
+aplikacja_serwera/xmrig_miner_handler
+aplikacja_serwera/cryptominer_server_functions.o

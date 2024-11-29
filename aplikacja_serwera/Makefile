@@ -13,4 +13,4 @@ xmrig_miner_handler: xmrig_miner_handler.o
 	${cc} ${cflags} -c $<
 
 clean:
-	rm cryptominer_server cryptominer_server.o xmrig_miner_handler
+	rm cryptominer_server cryptominer_server.o xmrig_miner_handler xmrig_miner_handler.o cryptominer_server_functions.o
