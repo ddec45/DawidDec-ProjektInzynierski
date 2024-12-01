@@ -91,6 +91,8 @@ int main(int argc, char** argv) {
     miner_instance_list_resource milr;
     miner_instance_statistics_list_resource mislr;
     miner_instance_statistics_get_resource misgr;
+    miner_instance_update_resource miur;
+    miner_instance_delete_resource midr;
     ws.register_resource("/hello", &hwr);
     ws.register_resource("/json", &jr);
     ws.register_resource("/user/miner/application/list", &malr);
@@ -99,6 +101,8 @@ int main(int argc, char** argv) {
     ws.register_resource("/user/miner/instance/list", &milr);
     ws.register_resource("/user/miner/instance/statistics/list", &mislr);
     ws.register_resource("/user/miner/instance/statistics/{miner_instance_id}", &misgr);
+    ws.register_resource("/user/miner/instance/update/{miner_instance_id}", &miur);
+    ws.register_resource("/user/miner/instance/delete/{miner_instance_id}", &midr);
     ws.start(false);
     puts("Cryptominer server has started.");
 

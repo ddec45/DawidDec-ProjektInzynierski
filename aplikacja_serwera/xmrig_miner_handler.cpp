@@ -3,6 +3,7 @@
 #include <memory>
 #include <fstream>
 #include <sstream>
+#include <curl/curl.h>
 
 #include <unistd.h>  
 #include <signal.h>
@@ -14,11 +15,16 @@
 #define ERROR_CHECK(ret, msg) if(ret){ \
     int e = errno; printf("%s: %s\n", msg, strerror(e)); }
 
+#define HOST "127.0.0.1"
+#define PORT "5678"
+
 int main(int argc, char** argv){
+    curl_global_init(CURL_GLOBAL_DEFAULT);
+
     char* filename = "/home/ddec45/xmrig_folder/xmrig/build/xmrig";
     char** exec_argv;
 
-    std::string s = std::string(argv[1]) + " --http-enabled --http-host 127.0.0.1 --http-port 5678 --http-no-restricted --http-access-token abc -B";
+    std::string s = std::string(argv[1]) + " --http-enabled --http-host " + HOST + " --http-port " + PORT + " --http-no-restricted --http-access-token abc -B";
     std::string substr;
     std::stringstream ss1(s);
     int idx = 1;
@@ -54,11 +60,44 @@ int main(int argc, char** argv){
     }
     free(exec_argv);
 
-    while(!waitpid(pid, NULL, WNOHANG)){
-        sleep(30);
-        ERROR_CHECK((kill(pid, SIGKILL) == -1), "kill")
-        //puts("sent kill signal");
-        sleep(10);
+    CURL* xmrig_handle = curl_easy_init();
+    if(!xmrig_handle){
+        exit(-2);
     }
+    CURL* cryptominer_server_handle = curl_easy_init();
+    if(!cryptominer_server_handle){
+        exit(-3);
+    }
+    std::string url = std::string("http:/") + HOST + ":" + PORT + "/";
+    curl_easy_setopt(xmrig_handle, CURLOPT_URL, url.c_str());
+    curl_easy_setopt(xmrig_handle, CURLOPT_VERBOSE, 1L);
+    curl_easy_setopt(xmrig_handle, CURLOPT_HTTPGET, 1L);
+
+    CURLcode code  = curl_easy_perform(xmrig_handle);
+
+    url = "https:/127.0.0.1:8080/user/miner/application/list";
+    curl_easy_setopt(cryptominer_server_handle, CURLOPT_URL, url.c_str());
+    curl_easy_setopt(cryptominer_server_handle, CURLOPT_VERBOSE, 1L);
+    curl_easy_setopt(cryptominer_server_handle, CURLOPT_SSL_VERIFYPEER, 0L);
+    curl_easy_setopt(cryptominer_server_handle, CURLOPT_SSL_VERIFYHOST, 0L);
+    curl_easy_setopt(cryptominer_server_handle, CURLOPT_HTTPGET, 1L);
+
+    struct curl_slist *list = NULL;
+    list = curl_slist_append(list, "Content-Type: application/json");
+    //list = curl_slist_append(list, "Accept:");
+    curl_easy_setopt(cryptominer_server_handle, CURLOPT_HTTPHEADER, list);
+
+    code  = curl_easy_perform(cryptominer_server_handle);
+
+    while(!waitpid(pid, NULL, WNOHANG)){
+        sleep(20);
+        ERROR_CHECK((kill(pid, SIGKILL) == -1), "kill")
+        puts("sent kill signal");
+        sleep(5);
+    }
+
+    curl_slist_free_all(list); /* free the list */
+    curl_easy_cleanup(xmrig_handle);
+    curl_easy_cleanup(cryptominer_server_handle);
     return 0;
 }

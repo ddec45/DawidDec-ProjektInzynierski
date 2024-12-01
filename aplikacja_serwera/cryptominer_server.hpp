@@ -41,6 +41,8 @@ struct miner_instance_info{
     int miner_app_id;
     std::string description;
     std::string statistics;
+    std::string update_info;
+    int is_checked_for_deletion;
     int update_timestamp;
 };
 
@@ -88,7 +90,7 @@ public:
 
 class miner_instance_start_resource: public http_resource{
 public:
-    std::shared_ptr<http_response> render_PUT(const http_request& req);
+    std::shared_ptr<http_response> render_POST(const http_request& req);
     std::shared_ptr<http_response> render(const http_request& req);
 };
 
@@ -107,6 +109,18 @@ public:
 class miner_instance_statistics_get_resource: public http_resource{
 public:
     std::shared_ptr<http_response> render_GET(const http_request& req);
+    std::shared_ptr<http_response> render(const http_request& req);
+};
+
+class miner_instance_update_resource: public http_resource{
+public:
+    std::shared_ptr<http_response> render_PUT(const http_request& req);
+    std::shared_ptr<http_response> render(const http_request& req);
+};
+
+class miner_instance_delete_resource: public http_resource{
+public:
+    std::shared_ptr<http_response> render_DELETE(const http_request& req);
     std::shared_ptr<http_response> render(const http_request& req);
 };
 

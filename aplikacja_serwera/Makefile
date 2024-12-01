@@ -7,7 +7,7 @@ cryptominer_server: cryptominer_server.o cryptominer_server_functions.o
 	${cc} $^ -o $@ -L/usr/lib -L/usr/local/lib -lhttpserver simdjson.cpp
 
 xmrig_miner_handler: xmrig_miner_handler.o
-	${cc} $< -o $@
+	${cc} $< -lcurl -o $@ 
 
 %.o : %.cpp
 	${cc} ${cflags} -c $<
