@@ -4,6 +4,7 @@
 	"ssl_certificate": "cert.pm",
 	"ssl_key": "key.pem",
 
+	"port": 8080,
 	"max_nr_of_miner_instances": 10, 
 	"instance_statistics_length": 1024,
 	"miner_applications":

@@ -48,8 +48,10 @@ int main(int argc, char** argv) {
         config_file_content_object.admin_api_key = config_file["admin_api_key"].get_string().value();
         config_file_content_object.ssl_certificate = config_file["ssl_certificate"].get_string().value();
         config_file_content_object.ssl_key = config_file["ssl_key"].get_string().value();
-        config_file_content_object.max_nr_of_miner_instances = config_file["max_nr_of_miner_instances"].get_int64();
-        config_file_content_object.instance_statistics_length = config_file["instance_statistics_length"].get_int64();
+
+        config_file_content_object.port = config_file["port"].get_uint64();
+        config_file_content_object.max_nr_of_miner_instances = config_file["max_nr_of_miner_instances"].get_uint64();
+        config_file_content_object.instance_statistics_length = config_file["instance_statistics_length"].get_uint64();
         config_file_content_object.update_period = config_file["update_period"].get_int64();
 
         auto miner_app_array = config_file["miner_applications"].get_array();
@@ -78,7 +80,7 @@ int main(int argc, char** argv) {
     //     exit(-1);
     // }
 
-    webserver ws = create_webserver(8080)
+    webserver ws = create_webserver(config_file_content_object.port)
         .use_ssl()
         .https_mem_key("key.pem")
         .https_mem_cert("cert.pem")
@@ -93,6 +95,7 @@ int main(int argc, char** argv) {
     miner_instance_statistics_get_resource misgr;
     miner_instance_update_resource miur;
     miner_instance_delete_resource midr;
+    send_mining_statistics_resource smsr;
     ws.register_resource("/hello", &hwr);
     ws.register_resource("/json", &jr);
     ws.register_resource("/user/miner/application/list", &malr);
@@ -103,11 +106,33 @@ int main(int argc, char** argv) {
     ws.register_resource("/user/miner/instance/statistics/{miner_instance_id}", &misgr);
     ws.register_resource("/user/miner/instance/update/{miner_instance_id}", &miur);
     ws.register_resource("/user/miner/instance/delete/{miner_instance_id}", &midr);
+    ws.register_resource("/admin/mining_statistics/send/{miner_instance_id}", &smsr);
+    
     ws.start(false);
     puts("Cryptominer server has started.");
 
     while(ws.is_running()){
-        sleep(10);
+        sleep(5);
+
+        int current_time = time(NULL);
+        mtx.lock();
+        try{
+            for (auto it = miner_instance_info_map.cbegin(); it != miner_instance_info_map.cend();)
+            {
+                if(current_time > it->second.update_timestamp + config_file_content_object.update_period){
+                    ERROR_CHECK((kill(it->second.process_id, SIGKILL) == -1), "kill")
+                    std::cout << "Deleted miner instance " << it->second.id << "." << std::endl;
+                    miner_instance_info_map.erase(it++);
+                }
+                else{
+                    ++it;
+                }
+            }
+        }
+        catch(...){
+            //mtx.unlock();
+        }
+        mtx.unlock();
     }
     
     return 0;

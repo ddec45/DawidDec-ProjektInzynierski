@@ -4,7 +4,8 @@
 	"ssl_certificate": "filename",
 	"ssl_key": "filename",
 
-	"max_nr_of_miner_instances": "integer", 
+	"port": "unsigned integer",
+	"max_nr_of_miner_instances": "unsigned integer", 
 	"instance_statistics_length": "nr_of_chars",
 	"miner_applications":
 	[

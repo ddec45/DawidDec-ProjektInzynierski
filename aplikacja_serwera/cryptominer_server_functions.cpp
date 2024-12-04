@@ -1,7 +1,9 @@
 #include "cryptominer_server.hpp"
 
 void request_get_notify(const http_request& req){
-    std::cout << req.get_method() << " "<< req.get_path() << std::endl;
+    time_t t;
+    time(&t);
+    std::cout << ctime(&t) << "\t" << req.get_method() << " " << req.get_path()<< std::endl;
     return;
 }
 
@@ -91,8 +93,16 @@ std::shared_ptr<http_response> miner_instance_start_resource::render_POST(const 
         obj.description = miner_app.description;
         obj.statistics = "Put statistics info here.";
         obj.update_info = "";
-        obj.is_checked_for_deletion = 0;
-        obj.update_timestamp = 0;
+        obj.status_code = DEFAULT_CODE;
+        obj.update_timestamp = time(NULL);
+
+        pid_t pid = fork();
+        if(pid == 0){
+            //std::cout << miner_app.filename.data() << std::endl;
+            ERROR_CHECK((execlp(("./" + miner_app.filename).data(), miner_app.filename.data(), input_arguments.data(), NULL) == -1), "execlp")
+            exit(-1);
+        }
+        obj.process_id = pid;
 
         mtx.lock();
         try{
@@ -103,13 +113,6 @@ std::shared_ptr<http_response> miner_instance_start_resource::render_POST(const 
             return std::shared_ptr<http_response>(new string_response("error", 500));
         }
         mtx.unlock();
-
-        pid_t pid = fork();
-        if(pid == 0){
-            //std::cout << miner_app.filename.data() << std::endl;
-            ERROR_CHECK((execlp(("./" + miner_app.filename).data(), miner_app.filename.data(), input_arguments.data(), NULL) == -1), "execlp")
-            exit(-1);
-        }
 
         std::stringstream response_content;
         response_content <<  "{\"id\":" << obj.id << ",\"name\":\"" << obj.name
@@ -141,7 +144,6 @@ std::shared_ptr<http_response> miner_instance_list_resource::render_GET(const ht
                     }
                     //std::cout << miner_instance.second.update_info << " " << miner_instance.second.is_checked_for_deletion << std::endl;
             }
-
         }
         catch(...){
             mtx.unlock();
@@ -230,15 +232,20 @@ std::shared_ptr<http_response> miner_instance_update_resource::render_PUT(const 
         std::string update_info = std::string(sv);
 
         std::stringstream message;
+        int ret_code;
         mtx.lock();
         try{
             miner_instance_info &miner_instance = miner_instance_info_map.at(miner_instance_id);
-            if(miner_instance.is_checked_for_deletion){
+            if(miner_instance.status_code == END_CODE){
                 message << "Miner instance with id " << miner_instance_id << " is checked for deletion";
-                return std::shared_ptr<http_response>(new string_response(message.str(), 410));
+                ret_code = 410;
             }
-            miner_instance.update_info = update_info;
-            message << "Update information for miner instance with id " << miner_instance.id << " sent successfully";
+            else{
+                miner_instance.update_info = update_info;
+                miner_instance.status_code = UPDATE_CODE;
+                message << "Update information for miner instance with id " << miner_instance.id << " sent successfully";
+                ret_code = 200;
+            }
         }
         catch(...){
             mtx.unlock();
@@ -247,7 +254,7 @@ std::shared_ptr<http_response> miner_instance_update_resource::render_PUT(const 
         mtx.unlock();
 
         response_content <<  "{\"message\":" << message.str() << "\"}";
-        return std::shared_ptr<http_response>(new string_response(response_content.str(), 200, "application/json"));
+        return std::shared_ptr<http_response>(new string_response(response_content.str(), ret_code, "application/json"));
     }
     catch(...){
         return std::shared_ptr<http_response>(new string_response("error", 400));
@@ -265,7 +272,7 @@ std::shared_ptr<http_response> miner_instance_delete_resource::render_DELETE(con
         mtx.lock();
         try{
             miner_instance_info &miner_instance = miner_instance_info_map.at(miner_instance_id);
-            miner_instance.is_checked_for_deletion = 1;
+            miner_instance.status_code = END_CODE;
             message << "Miner instance with id " << miner_instance.id << " is now checked for deletion";
         }
         catch(...){
@@ -282,3 +289,59 @@ std::shared_ptr<http_response> miner_instance_delete_resource::render_DELETE(con
     }
 }
 NOTFOUND_METHOD_INSERTER(miner_instance_delete_resource)
+
+std::shared_ptr<http_response> send_mining_statistics_resource::render_PUT(const http_request& req){
+    request_get_notify(req);
+    try{
+        std::stringstream response_content;  
+        int miner_instance_id = std::stoi(req.get_arg("miner_instance_id"));
+
+        ondemand::parser parser;
+        std::string json(req.get_content());
+        simdjson::padded_string padded_json(json);
+        ondemand::document content = parser.iterate(padded_json);
+        
+        int end_code = content["end_code"].get_bool();
+        auto sv = content["stats"].get_string().value();
+        std::string stats = std::string(sv);
+
+        std::stringstream message;
+        mtx.lock();
+        try{
+            if(end_code){
+                miner_instance_info_map.erase(miner_instance_id);
+                response_content <<  "{\"request_code\":" << DEFAULT_CODE << ",\"update_info\":\"\"}";
+                mtx.unlock();
+                return std::shared_ptr<http_response>(new string_response(response_content.str(), 200, "application/json"));
+            }
+
+            miner_instance_info &miner_instance = miner_instance_info_map.at(miner_instance_id);
+            if(miner_instance.status_code == END_CODE){
+                response_content <<  "{\"request_code\":"<< END_CODE << ",\"update_info\":\"\"}";
+                mtx.unlock();
+                return std::shared_ptr<http_response>(new string_response(response_content.str(), 200, "application/json"));
+            }
+
+            miner_instance.statistics = stats;
+            miner_instance.update_timestamp = time(NULL);
+
+            if(miner_instance.status_code == UPDATE_CODE){
+                response_content <<  "{\"request_code\":" << UPDATE_CODE << ",\"update_info\":\"" << miner_instance.update_info <<  "\"}";
+                miner_instance.status_code = DEFAULT_CODE;
+            }
+            else{
+                response_content <<  "{\"request_code\":" << DEFAULT_CODE << ",\"update_info\":\"\"}";
+            }
+        }
+        catch(...){
+            mtx.unlock();
+            return std::shared_ptr<http_response>(new string_response("error", 500));
+        }
+        mtx.unlock();
+        return std::shared_ptr<http_response>(new string_response(response_content.str(), 200, "application/json"));
+    }
+    catch(...){
+        return std::shared_ptr<http_response>(new string_response("error", 400));
+    }
+}
+NOTFOUND_METHOD_INSERTER(send_mining_statistics_resource)

@@ -14,8 +14,11 @@ using namespace simdjson;
 #include <mutex>
 
 #include <unistd.h>  
+#include <sys/types.h>
+#include <sys/wait.h>
 #include <sys/errno.h>
 #include <cstring>
+#include <ctime>
 
 #define ERROR_CHECK(ret, msg) if(ret){ \
     int e = errno; printf("%s: %s\n", msg, strerror(e)); throw;}
@@ -29,12 +32,17 @@ struct config_file_content_class{
 	std::string admin_api_key;
 	std::string ssl_certificate;
 	std::string ssl_key;
-	int max_nr_of_miner_instances;
-	int instance_statistics_length;
+
+    unsigned int port;
+	unsigned int max_nr_of_miner_instances;
+	unsigned int instance_statistics_length;
 	//std::unordered_map<int, miner_application_info> miner_applications;
 	int update_period;
 };
 
+#define DEFAULT_CODE 0
+#define UPDATE_CODE 1
+#define END_CODE 2
 struct miner_instance_info{
     int id;
     std::string name;
@@ -42,7 +50,9 @@ struct miner_instance_info{
     std::string description;
     std::string statistics;
     std::string update_info;
-    int is_checked_for_deletion;
+    int status_code;
+
+    pid_t process_id;
     int update_timestamp;
 };
 
@@ -121,6 +131,12 @@ public:
 class miner_instance_delete_resource: public http_resource{
 public:
     std::shared_ptr<http_response> render_DELETE(const http_request& req);
+    std::shared_ptr<http_response> render(const http_request& req);
+};
+
+class send_mining_statistics_resource: public http_resource{
+public:
+    std::shared_ptr<http_response> render_PUT(const http_request& req);
     std::shared_ptr<http_response> render(const http_request& req);
 };
 
