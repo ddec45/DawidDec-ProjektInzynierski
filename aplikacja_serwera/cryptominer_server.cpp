@@ -85,8 +85,8 @@ int main(int argc, char** argv) {
         .https_mem_key("key.pem")
         .https_mem_cert("cert.pem")
         .debug();
+
     hello_world_resource hwr;
-    json_resource jr;
     miner_application_list_resource malr;
     miner_application_get_resource magr;
     miner_instance_start_resource misr;
@@ -96,8 +96,8 @@ int main(int argc, char** argv) {
     miner_instance_update_resource miur;
     miner_instance_delete_resource midr;
     send_mining_statistics_resource smsr;
+    
     ws.register_resource("/hello", &hwr);
-    ws.register_resource("/json", &jr);
     ws.register_resource("/user/miner/application/list", &malr);
     ws.register_resource("/user/miner/application/{miner_app_id}", &magr);
     ws.register_resource("/user/miner/instance/start/{miner_app_id}", &misr);
@@ -109,19 +109,20 @@ int main(int argc, char** argv) {
     ws.register_resource("/admin/mining_statistics/send/{miner_instance_id}", &smsr);
     
     ws.start(false);
-    puts("Cryptominer server has started.");
+    puts("\nCryptominer server has started.");
 
     while(ws.is_running()){
         sleep(5);
 
-        int current_time = time(NULL);
+        time_t current_time = time(NULL);
         mtx.lock();
         try{
-            for (auto it = miner_instance_info_map.cbegin(); it != miner_instance_info_map.cend();)
-            {
+            for (auto it = miner_instance_info_map.cbegin(); it != miner_instance_info_map.cend();){
                 if(current_time > it->second.update_timestamp + config_file_content_object.update_period){
-                    ERROR_CHECK((kill(it->second.process_id, SIGKILL) == -1), "kill")
-                    std::cout << "Deleted miner instance " << it->second.id << "." << std::endl;
+                    kill(it->second.process_id, SIGINT);
+                    ERROR_CHECK("kill")
+                    time_t t = time(NULL);
+                    std::cout << "Deleted miner instance " << it->second.id << ".\t" << ctime(&t) << std::endl;
                     miner_instance_info_map.erase(it++);
                 }
                 else{
@@ -130,10 +131,12 @@ int main(int argc, char** argv) {
             }
         }
         catch(...){
+            puts("what");
             //mtx.unlock();
         }
         mtx.unlock();
     }
-    
+
+    ws.stop();
     return 0;
 }

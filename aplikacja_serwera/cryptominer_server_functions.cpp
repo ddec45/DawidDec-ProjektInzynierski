@@ -3,7 +3,7 @@
 void request_get_notify(const http_request& req){
     time_t t;
     time(&t);
-    std::cout << ctime(&t) << "\t" << req.get_method() << " " << req.get_path()<< std::endl;
+    std::cout << req.get_method() << " " << req.get_path() << "\t" << ctime(&t) << std::flush;
     return;
 }
 
@@ -11,23 +11,6 @@ std::shared_ptr<http_response> hello_world_resource::render(const http_request& 
     request_get_notify(req);
     return std::shared_ptr<http_response>(new string_response(config_file_content + '\n', 200, "application/json"));
 }
-
-std::shared_ptr<http_response> json_resource::render_POST(const http_request& req){
-    request_get_notify(req);
-    try{
-        ondemand::parser parser;
-        std::string json(req.get_content());
-        simdjson::padded_string padded_json(json);
-        ondemand::document tweets = parser.iterate(padded_json);
-        std::string s = std::to_string(uint64_t(tweets["search_metadata"]["count"]));
-        s += " results.";
-        return std::shared_ptr<http_response>(new string_response(s, 200, "application/json"));
-    }
-    catch(...){
-        return std::shared_ptr<http_response>(new string_response("error", 400));
-    }
-}
-NOTFOUND_METHOD_INSERTER(json_resource)
 
 std::shared_ptr<http_response> miner_application_list_resource::render_GET(const http_request& req){
     request_get_notify(req);
@@ -82,8 +65,7 @@ std::shared_ptr<http_response> miner_instance_start_resource::render_POST(const 
         ondemand::document content = parser.iterate(padded_json);
         //std::cout << json << std::endl;
         
-        auto sv = content["input_arguments"].get_string().value();
-        std::string input_arguments = std::string(sv);
+        std::string input_arguments = std::string(content["input_arguments"].get_string().value());
         //std::cout << input_arguments << std::endl;
 
         miner_instance_info obj;
@@ -91,15 +73,16 @@ std::shared_ptr<http_response> miner_instance_start_resource::render_POST(const 
         obj.name = miner_app.name;
         obj.miner_app_id = miner_app.id;
         obj.description = miner_app.description;
-        obj.statistics = "Put statistics info here.";
+        obj.statistics = "No statistics information has been sent yet.";
         obj.update_info = "";
         obj.status_code = DEFAULT_CODE;
-        obj.update_timestamp = time(NULL);
+        obj.update_timestamp = time(NULL) + 5;
 
         pid_t pid = fork();
         if(pid == 0){
             //std::cout << miner_app.filename.data() << std::endl;
-            ERROR_CHECK((execlp(("./" + miner_app.filename).data(), miner_app.filename.data(), input_arguments.data(), NULL) == -1), "execlp")
+            execlp(("./" + miner_app.filename).c_str(), miner_app.filename.c_str(), std::to_string(obj.id).c_str(), input_arguments.c_str(), NULL);
+            ERROR_CHECK("execlp")
             exit(-1);
         }
         obj.process_id = pid;

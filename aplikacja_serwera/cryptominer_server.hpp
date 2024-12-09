@@ -20,8 +20,8 @@ using namespace simdjson;
 #include <cstring>
 #include <ctime>
 
-#define ERROR_CHECK(ret, msg) if(ret){ \
-    int e = errno; printf("%s: %s\n", msg, strerror(e)); throw;}
+#define ERROR_CHECK(msg) if(errno){ \
+    int e = errno; fprintf(stderr, "%s: %s\n", msg, strerror(e)); /*throw;*/}
 
 #define NOTFOUND_METHOD_INSERTER(name) std::shared_ptr<http_response> name::render(const http_request& req){ \
     return std::shared_ptr<http_response>(new string_response("Not Found", 404)); \
@@ -78,12 +78,6 @@ void request_get_notify();
 class hello_world_resource : public http_resource {
 public:
     std::shared_ptr<http_response> render(const http_request&);
-};
-
-class json_resource : public http_resource{
-public:
-    std::shared_ptr<http_response> render_POST(const http_request& req);
-    std::shared_ptr<http_response> render(const http_request& req);
 };
 
 class miner_application_list_resource: public http_resource{
