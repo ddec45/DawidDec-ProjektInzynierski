@@ -45,6 +45,7 @@ int main(int argc, char** argv){
     int miner_id = std::stoi(argv[1]);
     std::string s_miner_id = std::to_string(miner_id);
 
+    //Wczytywanie pliku config
     std::fstream config_file_stream;
     config_file_stream.open(config_filename, std::ios_base::in);
 
@@ -58,6 +59,7 @@ int main(int argc, char** argv){
     delete buffer;
     //std::cout << "Config file content:\n" << config_file_content;
 
+    //Parsowanie zawartości
     ondemand::parser parser;
     std::string json(config_file_content);
     simdjson::padded_string padded_json(json);
@@ -69,6 +71,7 @@ int main(int argc, char** argv){
     std::string http_access_token(http["access-token"].get_string().value());
     int http_restricted = http["restricted"].get_bool();
 
+    //Tworzenie wejściowych argumentów i tworzenie wątku koparki
     char** exec_argv;
     exec_argv = (char**)malloc(sizeof(char*)*4);
     std::string s_input = std::string("--config=") + config_filename + " --http-port=" + std::to_string(http_port)
@@ -104,6 +107,7 @@ int main(int argc, char** argv){
     }
     free(exec_argv);
 
+    //Tworzenie uchwytów do wysyłania żądań i pobierania odpowiedzi
     CURL* xmrig_handle = curl_easy_init();
     if(!xmrig_handle){
         exit(-4);
@@ -140,6 +144,7 @@ int main(int argc, char** argv){
     curl_easy_setopt(cryptominer_server_handle, CURLOPT_HTTPHEADER, cryptominer_server_list);
     curl_easy_setopt(cryptominer_server_handle, CURLOPT_CUSTOMREQUEST, "PUT");
 
+    //Wysyłanie statystyk
     ondemand::parser response_parser1, response_parser2;
     int server_request_code = 0;
     long response_code = 0;
@@ -150,7 +155,6 @@ int main(int argc, char** argv){
             CURLcode code  = curl_easy_perform(xmrig_handle);
             curl_easy_getinfo(xmrig_handle, CURLINFO_RESPONSE_CODE, &response_code);
             if(response_code != 200){
-                //puts("check1");
                 break;
             }
             std::string response_json1 = readBuffer;
@@ -169,7 +173,6 @@ int main(int argc, char** argv){
             code = curl_easy_perform(cryptominer_server_handle);
             curl_easy_getinfo(xmrig_handle, CURLINFO_RESPONSE_CODE,&response_code);
             if(response_code != 200){
-                //puts("check2");
                 break;
             }
             std::string response_json2 = readBuffer;
@@ -192,11 +195,10 @@ int main(int argc, char** argv){
         }
     }
 
-    if(server_request_code != 2){
-        request_body = std::string("{\"end_code\":true,\"stats\":\"\"}");
-        curl_easy_setopt(cryptominer_server_handle, CURLOPT_POSTFIELDS, request_body.c_str());
-        curl_easy_perform(cryptominer_server_handle);
-    }
+    //Wysyłanie żądania z informacją o zakończeniu kopania
+    request_body = std::string("{\"end_code\":true,\"stats\":\"\"}");
+    curl_easy_setopt(cryptominer_server_handle, CURLOPT_POSTFIELDS, request_body.c_str());
+    curl_easy_perform(cryptominer_server_handle);
     kill(pid, SIGINT);
     ERROR_CHECK("kill", -6)
     puts("xmrig_miner_handler end.");

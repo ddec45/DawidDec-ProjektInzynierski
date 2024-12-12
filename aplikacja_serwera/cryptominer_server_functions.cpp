@@ -264,7 +264,7 @@ std::shared_ptr<http_response> miner_instance_delete_resource::render_DELETE(con
         }
         mtx.unlock();
 
-        response_content <<  "{\"message\":" << message.str() << "\"}";
+        response_content <<  "{\"message\":\"" << message.str() << "\"}";
         return std::shared_ptr<http_response>(new string_response(response_content.str(), 200, "application/json"));
     }
     catch(...){

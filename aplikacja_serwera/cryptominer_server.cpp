@@ -131,8 +131,7 @@ int main(int argc, char** argv) {
             }
         }
         catch(...){
-            puts("what");
-            //mtx.unlock();
+            puts("except");
         }
         mtx.unlock();
     }
