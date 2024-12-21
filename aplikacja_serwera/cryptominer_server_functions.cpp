@@ -73,7 +73,7 @@ std::shared_ptr<http_response> miner_instance_start_resource::render_POST(const 
         obj.name = miner_app.name;
         obj.miner_app_id = miner_app.id;
         obj.description = miner_app.description;
-        obj.statistics = "No statistics information has been sent yet.";
+        obj.statistics = "{\"default\": \"No statistics information has been sent yet.\"}";
         obj.update_info = "";
         obj.status_code = DEFAULT_CODE;
         obj.update_timestamp = time(NULL) + 5;
@@ -154,7 +154,7 @@ std::shared_ptr<http_response> miner_instance_statistics_list_resource::render_G
             int size = miner_instance_info_map.size();
             int i = 0;
             for(auto miner_instance : miner_instance_info_map){
-                response_content << "{\"miner_instance_id\":" << miner_instance.second.id << ",\"stats\":\"" << miner_instance.second.statistics << "\"}";
+                response_content << "{\"miner_instance_id\":" << miner_instance.second.id << ",\"stats\":" << miner_instance.second.statistics << "}";
                     if(++i < size){
                         response_content << ",";
                     }
@@ -184,7 +184,7 @@ std::shared_ptr<http_response> miner_instance_statistics_get_resource::render_GE
         mtx.lock();
         try{
             miner_instance_info miner_instance = miner_instance_info_map.at(miner_instance_id);
-            response_content << "{\"miner_instance_id\":" << miner_instance.id << ",\"stats\":\"" << miner_instance.statistics << "\"}";
+            response_content << "{\"miner_instance_id\":" << miner_instance.id << ",\"stats\":" << miner_instance.statistics << "}";
         }
         catch(...){
             mtx.unlock();
@@ -285,8 +285,10 @@ std::shared_ptr<http_response> send_mining_statistics_resource::render_PUT(const
         ondemand::document content = parser.iterate(padded_json);
         
         int end_code = content["end_code"].get_bool();
-        auto sv = content["stats"].get_string().value();
-        std::string stats = std::string(sv);
+        // auto sv = content["stats"].get_string().value();
+        // std::string stats = std::string(sv);
+        std::string stats = std::string(content["stats"].raw_json().value());
+        // std::cout << stats << std::endl;
 
         std::stringstream message;
         mtx.lock();

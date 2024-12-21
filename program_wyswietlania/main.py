@@ -5,6 +5,7 @@ import textwrap
 from enum import Enum
 import time
 import requests
+import json
 
 class State(Enum):
     MAIN = 1
@@ -18,6 +19,7 @@ def get_miner_stats():
     r = requests.get(url, verify=False)
     if r.status_code != 200:
         return False
+    print(r.content)
     return r.json()
 
 def get_miner_instances(id=None):
@@ -91,7 +93,7 @@ y_cnt = 0
 x_cnt = 0
 timestamp = 0.0
 current_time = 0.0
-timediff = 4.0
+timediff = 20.0
 
 miner_apps = None
 miner_stats = None
@@ -158,7 +160,7 @@ while True:
             continue
 
         current_time = time.time()
-        if current_time > timestamp + timediff:
+        if key3_rising_edge(disp.digital_read(disp.GPIO_KEY3_PIN)) or current_time > timestamp + timediff:
             miner_stats = get_miner_stats()
             miner_instances = get_miner_instances()
             timestamp = current_time
@@ -209,7 +211,7 @@ while True:
         y += height
         draw.line([(0,y),(disp.width,y)], fill="WHITE", width = 1)
 
-        text = current_miner_stats['stats']
+        text = json.dumps(current_miner_stats['stats'])
         lines = textwrap.wrap(text, width=21)
         temp_cnt = y_cnt
         for line in lines:
@@ -297,7 +299,7 @@ while True:
             continue
 
         current_time = time.time()
-        if current_time > timestamp + timediff:
+        if key3_rising_edge(disp.digital_read(disp.GPIO_KEY3_PIN)) or current_time > timestamp + timediff:
             miner_stats = get_miner_stats()
             miner_instances = get_miner_instances()
             timestamp = current_time
@@ -353,7 +355,7 @@ while True:
         y += height
         draw.line([(0,y),(disp.width,y)], fill="WHITE", width = 1)
 
-        text = current_miner_stats['stats']
+        text = json.dumps(current_miner_stats['stats'])
         lines = textwrap.wrap(text, width=21)
         temp_cnt = y_cnt
         for line in lines:

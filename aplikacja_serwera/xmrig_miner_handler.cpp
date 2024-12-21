@@ -162,10 +162,10 @@ int main(int argc, char** argv){
             simdjson::padded_string response_padded_json1(response_json1);
             ondemand::document response_content1 = response_parser1.iterate(response_padded_json1);
 
-            //std::string response_content_string = std::string(response_content1.raw_json().value());
-            std::string hashrate = std::string(response_content1["hashrate"]["total"].raw_json().value());
+            std::string response_content_string = std::string(response_content1.raw_json().value());
+            //std::string hashrate = std::string(response_content1["hashrate"]["total"].raw_json().value());
             std::stringstream ss;
-            ss << "{\"end_code\":false,\"stats\":\"Total hashrate: " << hashrate /*response_content_string*/ << "\"}";
+            ss << "{\"end_code\":false,\"stats\":" << response_content_string << "}";
             request_body = ss.str();
             //std::cout << request_body << std::endl;
             curl_easy_setopt(cryptominer_server_handle, CURLOPT_POSTFIELDS, request_body.c_str());

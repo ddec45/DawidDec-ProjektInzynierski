@@ -5,14 +5,15 @@ input=$2
 session=xmrig_miner_session_$1
 nr=0
 
-function handle_sigint()
+function handle_signal()
 {
     tmux kill-session -t "${session}_${nr}" 
     exit
 }
 
 # trapping the SIGINT signal
-trap handle_sigint SIGINT
+trap handle_signal SIGINT
+trap handle_signal SIGTERM
 
 # start xmrig miner
 while true
