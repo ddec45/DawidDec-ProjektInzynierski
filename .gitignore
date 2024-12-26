@@ -12,3 +12,7 @@ aplikacja_serwera/xmrig_miner_handler
 aplikacja_serwera/cryptominer_server_functions.o
 program_wyswietlania/.lgd-nfy0
 program_wyswietlania/__pycache__
+aplikacja_serwera/user_api_key.txt
+aplikacja_serwera/admin_api_key.txt
+aplikacja_serwera/bfgminer_handler.cpp
+aplikacja_serwera/bfgminer_handler_adapter_script.sh

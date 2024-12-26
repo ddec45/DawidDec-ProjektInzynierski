@@ -32,7 +32,7 @@ size_t WriteCallback(char *contents, size_t size, size_t nmemb, void *userp)
 }
 
 int main(int argc, char** argv){
-    if(argc < 2){
+    if(argc < 4){
         exit(-1);
     }
     curl_global_init(CURL_GLOBAL_DEFAULT);
@@ -57,7 +57,14 @@ int main(int argc, char** argv){
     config_file_stream.read(buffer, config_file_length);
     std::string config_file_content = buffer;
     delete buffer;
+    config_file_stream.close();
     //std::cout << "Config file content:\n" << config_file_content;
+
+    //Wczytywanie klucza API
+    std::string admin_api_key(argv[2]);
+    // config_file_stream.open(config_filename, std::ios_base::in);
+    // std::getline(config_file_stream, admin_api_key);
+    // config_file_stream.close();
 
     //Parsowanie zawartości
     ondemand::parser parser;
@@ -76,8 +83,8 @@ int main(int argc, char** argv){
     exec_argv = (char**)malloc(sizeof(char*)*4);
     std::string s_input = std::string("--config=") + config_filename + " --http-port=" + std::to_string(http_port)
         + " --http-enabled --http-host=" + http_host + " --http-access-token=" + http_access_token + (http_restricted ? " --http-no-restricted" : "");// + " --http-enabled --http-host " + XMRIG_HOST + " --http-port " + XMRIG_PORT + " --http-access-token abc --http-no-restricted -B";
-    if(argv[2] != nullptr){
-        s_input += std::string(" ") + argv[2];
+    if(argv[3] != nullptr){
+        s_input += std::string(" ") + argv[3];
     }
 
     exec_argv[0] = (char*)malloc(sizeof(char)*(s_xmrig_filename.size()+1));
@@ -141,6 +148,7 @@ int main(int argc, char** argv){
 
     struct curl_slist *cryptominer_server_list = NULL;
     cryptominer_server_list = curl_slist_append(cryptominer_server_list, "Content-Type: application/json");
+    cryptominer_server_list = curl_slist_append(cryptominer_server_list, (std::string("X-API-Key: ") + admin_api_key).c_str());
     curl_easy_setopt(cryptominer_server_handle, CURLOPT_HTTPHEADER, cryptominer_server_list);
     curl_easy_setopt(cryptominer_server_handle, CURLOPT_CUSTOMREQUEST, "PUT");
 

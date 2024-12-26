@@ -26,7 +26,7 @@ std::mutex mtx;
 
 int main(int argc, char** argv) {
     puts("Initializing cryptominer server...");
-    //try{
+    try{
         std::fstream config_file_stream;
         config_file_stream.open("config.json", std::ios_base::in);
 
@@ -44,8 +44,17 @@ int main(int argc, char** argv) {
         simdjson::padded_string padded_json(json);
         config_file = config_file_parser.iterate(padded_json);
 
-        config_file_content_object.user_api_key = config_file["user_api_key"].get_string().value();
-        config_file_content_object.admin_api_key = config_file["admin_api_key"].get_string().value();
+        std::fstream api_key_file_stream;
+        std::string temp = std::string(config_file["user_api_key"].get_string().value());
+        api_key_file_stream.open(temp, std::ios_base::in);
+        std::getline(api_key_file_stream, config_file_content_object.user_api_key);
+        api_key_file_stream.close();
+
+        temp = std::string(config_file["admin_api_key"].get_string().value());
+        api_key_file_stream.open(temp, std::ios_base::in);
+        std::getline(api_key_file_stream, config_file_content_object.admin_api_key);
+        api_key_file_stream.close();
+
         config_file_content_object.ssl_certificate = config_file["ssl_certificate"].get_string().value();
         config_file_content_object.ssl_key = config_file["ssl_key"].get_string().value();
 
@@ -70,15 +79,14 @@ int main(int argc, char** argv) {
             miner_application_info_map.insert({obj.id, obj});
             //config_file_content_object.miner_applications.insert({obj.id, obj});
         }
+        config_file_stream.close();
         //int max_nr_of_miner_instances = config_file["max_nr_of_miner_instances"].get_int64();
-
-
         //std::cout << max_nr_of_miner_instances << std::endl;
-    // }
-    // catch(...){
-    //     puts("Incorrect config file!");
-    //     exit(-1);
-    // }
+    }
+    catch(...){
+        puts("Incorrect config file!");
+        exit(-1);
+    }
 
     webserver ws = create_webserver(config_file_content_object.port)
         .use_ssl()
@@ -86,7 +94,6 @@ int main(int argc, char** argv) {
         .https_mem_cert("cert.pem")
         .debug();
 
-    hello_world_resource hwr;
     miner_application_list_resource malr;
     miner_application_get_resource magr;
     miner_instance_start_resource misr;
@@ -97,7 +104,6 @@ int main(int argc, char** argv) {
     miner_instance_delete_resource midr;
     send_mining_statistics_resource smsr;
     
-    ws.register_resource("/hello", &hwr);
     ws.register_resource("/user/miner/application/list", &malr);
     ws.register_resource("/user/miner/application/{miner_app_id}", &magr);
     ws.register_resource("/user/miner/instance/start/{miner_app_id}", &misr);
@@ -122,7 +128,7 @@ int main(int argc, char** argv) {
                     kill(it->second.process_id, SIGINT);
                     ERROR_CHECK("kill")
                     time_t t = time(NULL);
-                    std::cout << "Deleted miner instance " << it->second.id << ".\t" << ctime(&t) << std::endl;
+                    std::cout << "Deleted miner instance " << it->second.id << ".\t" << ctime(&t) << std::flush;
                     miner_instance_info_map.erase(it++);
                 }
                 else{

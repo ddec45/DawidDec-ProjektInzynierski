@@ -7,13 +7,23 @@ void request_get_notify(const http_request& req){
     return;
 }
 
-std::shared_ptr<http_response> hello_world_resource::render(const http_request& req) {
-    request_get_notify(req);
-    return std::shared_ptr<http_response>(new string_response(config_file_content + '\n', 200, "application/json"));
+inline int check_api_key(std::string key_from_request, std::string key_from_server){
+    //std::cout << key_from_request << "\n" << key_from_server << std::endl;
+    //Implementacja odporna na atak czasowy
+    const char* s1 = key_from_request.c_str();
+    const char* s2 = key_from_server.c_str();
+    unsigned char result = 0;
+    while (*s1 && *s2) {
+        result |= *s1 ^ *s2;
+        s1++;
+        s2++;
+    }
+    return result | (*s1 ^ *s2);
 }
 
 std::shared_ptr<http_response> miner_application_list_resource::render_GET(const http_request& req){
     request_get_notify(req);
+    CHECK_API_KEY(std::string(req.get_header("X-API-Key")),config_file_content_object.user_api_key)
     try{
         std::stringstream response_content;
         response_content << "[";
@@ -37,6 +47,7 @@ NOTFOUND_METHOD_INSERTER(miner_application_list_resource)
 
 std::shared_ptr<http_response> miner_application_get_resource::render_GET(const http_request& req){
     request_get_notify(req);
+    CHECK_API_KEY(std::string(req.get_header("X-API-Key")),config_file_content_object.user_api_key)
     try{
         int miner_app_id = std::stoi(req.get_arg("miner_app_id"));
         miner_application_info miner_app = miner_application_info_map.at(miner_app_id);
@@ -55,6 +66,7 @@ std::shared_ptr<http_response> miner_instance_start_resource::render_POST(const 
     static int id_cnt = 0;
 
     request_get_notify(req);
+    CHECK_API_KEY(std::string(req.get_header("X-API-Key")),config_file_content_object.user_api_key)
     try{
         int miner_app_id = std::stoi(req.get_arg("miner_app_id"));
         miner_application_info miner_app = miner_application_info_map.at(miner_app_id);
@@ -81,7 +93,8 @@ std::shared_ptr<http_response> miner_instance_start_resource::render_POST(const 
         pid_t pid = fork();
         if(pid == 0){
             //std::cout << miner_app.filename.data() << std::endl;
-            execlp(("./" + miner_app.filename).c_str(), miner_app.filename.c_str(), std::to_string(obj.id).c_str(), input_arguments.c_str(), NULL);
+            execlp(("./" + miner_app.filename).c_str(), miner_app.filename.c_str(), std::to_string(obj.id).c_str(),
+                config_file_content_object.admin_api_key.c_str(), input_arguments.c_str(), NULL);
             ERROR_CHECK("execlp")
             exit(-1);
         }
@@ -93,7 +106,7 @@ std::shared_ptr<http_response> miner_instance_start_resource::render_POST(const 
         }
         catch(...){
             mtx.unlock();
-            return std::shared_ptr<http_response>(new string_response("error", 500));
+            return std::shared_ptr<http_response>(new string_response("error", 400));
         }
         mtx.unlock();
 
@@ -110,6 +123,7 @@ NOTFOUND_METHOD_INSERTER(miner_instance_start_resource)
 
 std::shared_ptr<http_response> miner_instance_list_resource::render_GET(const http_request& req){
     request_get_notify(req);
+    CHECK_API_KEY(std::string(req.get_header("X-API-Key")),config_file_content_object.user_api_key)
     try{
         std::stringstream response_content;
         response_content << "[";
@@ -130,7 +144,7 @@ std::shared_ptr<http_response> miner_instance_list_resource::render_GET(const ht
         }
         catch(...){
             mtx.unlock();
-            return std::shared_ptr<http_response>(new string_response("error", 500));
+            return std::shared_ptr<http_response>(new string_response("error", 400));
         }
         mtx.unlock();
 
@@ -145,6 +159,7 @@ NOTFOUND_METHOD_INSERTER(miner_instance_list_resource)
 
 std::shared_ptr<http_response> miner_instance_statistics_list_resource::render_GET(const http_request& req){
     request_get_notify(req);
+    CHECK_API_KEY(std::string(req.get_header("X-API-Key")),config_file_content_object.user_api_key)
     try{
         std::stringstream response_content;
         response_content << "[";
@@ -162,7 +177,7 @@ std::shared_ptr<http_response> miner_instance_statistics_list_resource::render_G
         }
         catch(...){
             mtx.unlock();
-            return std::shared_ptr<http_response>(new string_response("error", 500));
+            return std::shared_ptr<http_response>(new string_response("error", 400));
         }
         mtx.unlock();
 
@@ -177,6 +192,7 @@ NOTFOUND_METHOD_INSERTER(miner_instance_statistics_list_resource)
 
 std::shared_ptr<http_response> miner_instance_statistics_get_resource::render_GET(const http_request& req){
     request_get_notify(req);
+    CHECK_API_KEY(std::string(req.get_header("X-API-Key")),config_file_content_object.user_api_key)
     try{
         std::stringstream response_content;  
         int miner_instance_id = std::stoi(req.get_arg("miner_instance_id"));
@@ -188,7 +204,7 @@ std::shared_ptr<http_response> miner_instance_statistics_get_resource::render_GE
         }
         catch(...){
             mtx.unlock();
-            return std::shared_ptr<http_response>(new string_response("error", 500));
+            return std::shared_ptr<http_response>(new string_response("error", 400));
         }
         mtx.unlock();
 
@@ -202,6 +218,7 @@ NOTFOUND_METHOD_INSERTER(miner_instance_statistics_get_resource)
 
 std::shared_ptr<http_response> miner_instance_update_resource::render_PUT(const http_request& req){
     request_get_notify(req);
+    CHECK_API_KEY(std::string(req.get_header("X-API-Key")),config_file_content_object.user_api_key)
     try{
         std::stringstream response_content;  
         int miner_instance_id = std::stoi(req.get_arg("miner_instance_id"));
@@ -232,7 +249,7 @@ std::shared_ptr<http_response> miner_instance_update_resource::render_PUT(const 
         }
         catch(...){
             mtx.unlock();
-            return std::shared_ptr<http_response>(new string_response("error", 500));
+            return std::shared_ptr<http_response>(new string_response("error", 400));
         }
         mtx.unlock();
 
@@ -247,6 +264,7 @@ NOTFOUND_METHOD_INSERTER(miner_instance_update_resource)
 
 std::shared_ptr<http_response> miner_instance_delete_resource::render_DELETE(const http_request& req){
     request_get_notify(req);
+    CHECK_API_KEY(std::string(req.get_header("X-API-Key")),config_file_content_object.user_api_key)
     try{
         std::stringstream response_content;  
         int miner_instance_id = std::stoi(req.get_arg("miner_instance_id"));
@@ -275,6 +293,7 @@ NOTFOUND_METHOD_INSERTER(miner_instance_delete_resource)
 
 std::shared_ptr<http_response> send_mining_statistics_resource::render_PUT(const http_request& req){
     request_get_notify(req);
+    CHECK_API_KEY(std::string(req.get_header("X-API-Key")),config_file_content_object.admin_api_key)
     try{
         std::stringstream response_content;  
         int miner_instance_id = std::stoi(req.get_arg("miner_instance_id"));

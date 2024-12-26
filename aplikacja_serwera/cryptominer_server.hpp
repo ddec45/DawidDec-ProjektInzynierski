@@ -24,7 +24,7 @@ using namespace simdjson;
     int e = errno; fprintf(stderr, "%s: %s\n", msg, strerror(e)); /*throw;*/}
 
 #define NOTFOUND_METHOD_INSERTER(name) std::shared_ptr<http_response> name::render(const http_request& req){ \
-    return std::shared_ptr<http_response>(new string_response("Not Found", 404)); \
+    return std::shared_ptr<http_response>(new string_response("{\"message\":\"Resource not found.\"}", 404)); \
 }
 
 struct config_file_content_class{
@@ -73,7 +73,12 @@ extern config_file_content_class config_file_content_object;
 
 extern std::mutex mtx;
 
-void request_get_notify();
+void request_get_notify(const http_request& req);
+int check_api_key(std::string key_from_request, std::string key_from_server);
+
+#define CHECK_API_KEY(key_from_request, key_from_server) if(check_api_key(key_from_request, key_from_server)){ \
+    return std::shared_ptr<http_response>(new string_response("{\"message\":\"Incorrect api key.\"}", 401, "application/json")); \
+}
 
 class hello_world_resource : public http_resource {
 public:
