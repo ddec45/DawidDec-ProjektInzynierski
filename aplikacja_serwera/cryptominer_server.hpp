@@ -51,6 +51,7 @@ struct miner_instance_info{
     std::string statistics;
     std::string update_info;
     int status_code;
+    int end_code;
 
     pid_t process_id;
     int update_timestamp;

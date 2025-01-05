@@ -6,7 +6,7 @@
 
 	"port": 8080,
 	"max_nr_of_miner_instances": 10, 
-	"instance_statistics_length": 1024,
+	"instance_statistics_length": 4000,
 	"miner_applications":
 	[
 		{
@@ -20,14 +20,8 @@
 			"id": 2,
 			"name": "xmrig_miner",
 			"description": "XMRig Miner for mining Monero."
-		},
-		{
-			"filename": "test_handler",
-			"id": 3,
-			"name": "test",
-			"description": "Test."
 		}
 	],
 	
-	"update_period": 30
+	"update_period": 20
 }

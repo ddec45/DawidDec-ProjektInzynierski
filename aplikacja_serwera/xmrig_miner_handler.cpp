@@ -179,7 +179,7 @@ int main(int argc, char** argv){
             curl_easy_setopt(cryptominer_server_handle, CURLOPT_POSTFIELDS, request_body.c_str());
 
             code = curl_easy_perform(cryptominer_server_handle);
-            curl_easy_getinfo(xmrig_handle, CURLINFO_RESPONSE_CODE,&response_code);
+            curl_easy_getinfo(cryptominer_server_handle, CURLINFO_RESPONSE_CODE, &response_code);
             if(response_code != 200){
                 break;
             }
@@ -207,7 +207,7 @@ int main(int argc, char** argv){
     request_body = std::string("{\"end_code\":true,\"stats\":\"\"}");
     curl_easy_setopt(cryptominer_server_handle, CURLOPT_POSTFIELDS, request_body.c_str());
     curl_easy_perform(cryptominer_server_handle);
-    kill(pid, SIGINT);
+    kill(pid, SIGTERM);
     ERROR_CHECK("kill", -6)
     puts("xmrig_miner_handler end.");
     curl_slist_free_all(xmrig_list);

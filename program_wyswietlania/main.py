@@ -16,7 +16,7 @@ class State(Enum):
     NO_MINER_SERVER = 6
 
 f = open('../aplikacja_serwera/user_api_key.txt', 'r', encoding="utf-8")
-user_api_key = f.readline()
+user_api_key = f.readline().strip()
 f.close()
 api_key_header = {'X-API-Key': user_api_key}
 print(api_key_header)
@@ -49,7 +49,7 @@ def get_miner_apps():
 def post_new_miner_instance(id):
     url = f"https://localhost:8080/user/miner/instance/start/{id}"
     r = requests.post(url, json={'input_arguments':''}, verify=False, headers=api_key_header)
-    if r.status_code != 200:
+    if r.status_code != 201:
         return False
     return r.json()
 
@@ -101,6 +101,8 @@ x_cnt = 0
 timestamp = 0.0
 current_time = 0.0
 timediff = 20.0
+scrolling_timestamp = 0.0
+scrolling_timediff = 0.05
 
 miner_apps = None
 miner_stats = None
@@ -174,12 +176,14 @@ while True:
                 miner_instances = get_miner_instances()
             length = len(miner_stats)
 
-            if up_rising_edge(disp.digital_read(disp.GPIO_KEY_UP_PIN)):
+            if disp.digital_read(disp.GPIO_KEY_UP_PIN) and current_time > scrolling_timestamp + scrolling_timediff: #up_rising_edge(disp.digital_read(disp.GPIO_KEY_UP_PIN)):
                 if y_cnt > 0:
                     y_cnt -= 1
-            if down_rising_edge(disp.digital_read(disp.GPIO_KEY_DOWN_PIN)):
+                    scrolling_timestamp = current_time
+            if disp.digital_read(disp.GPIO_KEY_DOWN_PIN) and current_time > scrolling_timestamp + scrolling_timediff: #down_rising_edge(disp.digital_read(disp.GPIO_KEY_DOWN_PIN)):
                 if y_cnt < 255:
                     y_cnt += 1
+                    scrolling_timestamp = current_time
             if left_rising_edge(disp.digital_read(disp.GPIO_KEY_LEFT_PIN)):
                 if x_cnt > 0:
                     x_cnt -= 1
@@ -242,12 +246,15 @@ while True:
                 miner_apps = get_miner_apps()
             length = len(miner_apps)
 
-            if up_rising_edge(disp.digital_read(disp.GPIO_KEY_UP_PIN)):
+            current_time = time.time()
+            if disp.digital_read(disp.GPIO_KEY_UP_PIN) and current_time > scrolling_timestamp + scrolling_timediff: #up_rising_edge(disp.digital_read(disp.GPIO_KEY_UP_PIN)):
                 if y_cnt > 0:
                     y_cnt -= 1
-            if down_rising_edge(disp.digital_read(disp.GPIO_KEY_DOWN_PIN)):
+                    scrolling_timestamp = current_time
+            if disp.digital_read(disp.GPIO_KEY_DOWN_PIN) and current_time > scrolling_timestamp + scrolling_timediff: #down_rising_edge(disp.digital_read(disp.GPIO_KEY_DOWN_PIN)):
                 if y_cnt < 255:
                     y_cnt += 1
+                    scrolling_timestamp = current_time
             if left_rising_edge(disp.digital_read(disp.GPIO_KEY_LEFT_PIN)):
                 if x_cnt > 0:
                     x_cnt -= 1
@@ -313,12 +320,14 @@ while True:
                 miner_instances = get_miner_instances()
             length = len(miner_stats)
 
-            if up_rising_edge(disp.digital_read(disp.GPIO_KEY_UP_PIN)):
+            if disp.digital_read(disp.GPIO_KEY_UP_PIN) and current_time > scrolling_timestamp + scrolling_timediff: #up_rising_edge(disp.digital_read(disp.GPIO_KEY_UP_PIN)):
                 if y_cnt > 0:
                     y_cnt -= 1
-            if down_rising_edge(disp.digital_read(disp.GPIO_KEY_DOWN_PIN)):
+                    scrolling_timestamp = current_time
+            if disp.digital_read(disp.GPIO_KEY_DOWN_PIN) and current_time > scrolling_timestamp + scrolling_timediff: #down_rising_edge(disp.digital_read(disp.GPIO_KEY_DOWN_PIN)):
                 if y_cnt < 255:
                     y_cnt += 1
+                    scrolling_timestamp = current_time
             if left_rising_edge(disp.digital_read(disp.GPIO_KEY_LEFT_PIN)):
                 if x_cnt > 0:
                     x_cnt -= 1

@@ -68,6 +68,10 @@ std::shared_ptr<http_response> miner_instance_start_resource::render_POST(const 
     request_get_notify(req);
     CHECK_API_KEY(std::string(req.get_header("X-API-Key")),config_file_content_object.user_api_key)
     try{
+        if(miner_instance_info_map.size() >= config_file_content_object.max_nr_of_miner_instances){
+            throw std::exception();
+        }
+
         int miner_app_id = std::stoi(req.get_arg("miner_app_id"));
         miner_application_info miner_app = miner_application_info_map.at(miner_app_id);
 
@@ -88,6 +92,7 @@ std::shared_ptr<http_response> miner_instance_start_resource::render_POST(const 
         obj.statistics = "{\"default\": \"No statistics information has been sent yet.\"}";
         obj.update_info = "";
         obj.status_code = DEFAULT_CODE;
+        obj.end_code = 0;
         obj.update_timestamp = time(NULL) + 5;
 
         pid_t pid = fork();
@@ -308,18 +313,21 @@ std::shared_ptr<http_response> send_mining_statistics_resource::render_PUT(const
         // std::string stats = std::string(sv);
         std::string stats = std::string(content["stats"].raw_json().value());
         // std::cout << stats << std::endl;
+        if(stats.length() > config_file_content_object.instance_statistics_length){
+            throw std::exception();
+        }
 
         std::stringstream message;
         mtx.lock();
         try{
+            miner_instance_info &miner_instance = miner_instance_info_map.at(miner_instance_id);
             if(end_code){
-                miner_instance_info_map.erase(miner_instance_id);
+                miner_instance.end_code = true;
                 response_content <<  "{\"request_code\":" << DEFAULT_CODE << ",\"update_info\":\"\"}";
                 mtx.unlock();
                 return std::shared_ptr<http_response>(new string_response(response_content.str(), 200, "application/json"));
             }
 
-            miner_instance_info &miner_instance = miner_instance_info_map.at(miner_instance_id);
             if(miner_instance.status_code == END_CODE){
                 response_content <<  "{\"request_code\":"<< END_CODE << ",\"update_info\":\"\"}";
                 mtx.unlock();

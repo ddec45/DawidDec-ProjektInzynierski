@@ -118,22 +118,30 @@ int main(int argc, char** argv) {
     puts("\nCryptominer server has started.");
 
     while(ws.is_running()){
-        sleep(5);
+        sleep(4);
 
         time_t current_time = time(NULL);
         mtx.lock();
         try{
             for (auto it = miner_instance_info_map.cbegin(); it != miner_instance_info_map.cend();){
-                if(current_time > it->second.update_timestamp + config_file_content_object.update_period){
-                    kill(it->second.process_id, SIGINT);
-                    ERROR_CHECK("kill")
-                    time_t t = time(NULL);
-                    std::cout << "Deleted miner instance " << it->second.id << ".\t" << ctime(&t) << std::flush;
+                if(it->second.end_code && waitpid(it->second.process_id, NULL, WNOHANG)){ //process has declared to end and has terminated
                     miner_instance_info_map.erase(it++);
+                    continue;
                 }
-                else{
-                    ++it;
+                else if(current_time > it->second.update_timestamp + config_file_content_object.update_period){
+                    time_t t = time(NULL);
+                    if(!waitpid(it->second.process_id, NULL, WNOHANG)){ //process has not terminated
+                        kill(it->second.process_id, SIGINT);
+                        ERROR_CHECK("kill")
+                        std::cout << "Deleted miner instance " << it->second.id << ".\t" << ctime(&t) << std::flush;
+                    }
+                    else{
+                        std::cout << "Miner instance " << it->second.id << " has terminated.\t" << ctime(&t) << std::flush;
+                    }
+                    miner_instance_info_map.erase(it++);
+                    continue;
                 }
+                ++it;
             }
         }
         catch(...){
