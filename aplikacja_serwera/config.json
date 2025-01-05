@@ -1,0 +1,27 @@
+{
+	"user_api_key": "user_api_key.txt",
+	"admin_api_key": "admin_api_key.txt",
+	"ssl_certificate": "cert.pm",
+	"ssl_key": "key.pem",
+
+	"port": 8080,
+	"max_nr_of_miner_instances": 10, 
+	"instance_statistics_length": 4000,
+	"miner_applications":
+	[
+		{
+			"filename": "bfgminer_handler",
+			"id": 1,
+			"name": "bfgminer",
+			"description": "BFGMiner for mining Bitcoin."
+		},
+		{
+			"filename": "xmrig_miner_handler",
+			"id": 2,
+			"name": "xmrig_miner",
+			"description": "XMRig Miner for mining Monero."
+		}
+	],
+	
+	"update_period": 20
+}

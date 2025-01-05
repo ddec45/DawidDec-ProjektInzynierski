@@ -1,0 +1,24 @@
+{
+    "http": {
+        "enabled": true,
+        "host": "127.0.0.1",
+        "port": 3000,
+        "access-token": "abc",
+        "restricted": false
+    },
+    "autosave": false,
+    "cpu": true,
+    "opencl": false,
+    "cuda": false,
+    "pools": [
+        {
+            "url": "pool.hashvault.pro:443",
+            "user": "467rzsoijephTCV53UV1wwV9S7xF5LkHSQAAhcTUgRYGRiLbmURLeqSZCMePETPm3yJ3BUT99DeXpEYk79VFij5bP7FPJDZ",
+            "pass": "pi_worker",
+            "keepalive": true,
+            "tls": true
+        }
+    ],
+    "background": false,
+    "log-file": "xmrig_log.txt"
+}
