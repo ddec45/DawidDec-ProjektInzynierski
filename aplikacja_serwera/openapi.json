@@ -1,0 +1,713 @@
+{
+    "openapi": "3.0.0",
+    "info": {
+      "version": "1.0.0",
+      "title": "cryptominer_server API",
+      "description": "API służące do uruchamiania i zarządzania aplikacjami wydobywającymi kryptowaluty na serwerze oraz do odczytywania statystyk."
+    },
+    "paths": {
+      "/user/miner/application/list": {
+        "get": {
+          "summary": "Get miner application list.",
+          "security": [
+            { "UserApiKey": [] }
+          ],
+          "responses": {
+            "200": {
+              "description": "A list of available miner applications and their descriptions.",
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "$ref": "#/components/schemas/MinerAppList"
+                  }
+                }
+              }
+            },
+            "401": {
+              "description": "Unauthorized",
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "$ref": "#/components/schemas/Error"
+                  }
+                }
+              }
+            },
+            "500": {
+              "description": "Unexpected error",
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "$ref": "#/components/schemas/Error"
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "/user/miner/application/{miner_app_id}": {
+        "get": {
+          "summary": "Get information of a miner application with a specified id.",
+          "security": [
+            { "UserApiKey": [] }
+          ],
+          "parameters": [{
+            "in": "path",
+            "name": "miner_app_id",
+            "required": true,
+            "schema": {
+              "$ref": "#/components/schemas/MinerAppId"
+            },
+            "description": "The miner application ID."
+          }],
+          "responses": {
+            "200": {
+              "description": "Miner application information.",
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "$ref": "#/components/schemas/MinerApp"
+                  }
+                }
+              }
+            },
+            "401": {
+              "description": "Unauthorized",
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "$ref": "#/components/schemas/Error"
+                  }
+                }
+              }
+            },
+            "500": {
+              "description": "Unexpected error",
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "$ref": "#/components/schemas/Error"
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "/user/miner/instance/start/{miner_app_id}": {
+        "parameters": [{
+            "in": "path",
+            "name": "miner_app_id",
+            "required": true,
+            "schema": {
+              "$ref": "#/components/schemas/MinerAppId"
+            },
+            "description": "The miner application ID."
+          }],
+        "post": {
+          "requestBody": {
+            "description": "Input arguments for miner instance.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MinerInstanceInputInfo"
+                }
+              }
+            },
+            "required": true
+          },
+          "summary": "Start a miner instance from a specified application.",
+          "security": [
+            { "UserApiKey": [] }
+          ],
+          "responses": {
+            "201": {
+              "description": "A miner instance object.",
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "$ref": "#/components/schemas/MinerInstance"
+                  }
+                }
+              }
+            },
+            "401": {
+              "description": "Unauthorized",
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "$ref": "#/components/schemas/Error"
+                  }
+                }
+              }
+            },
+            "404": {
+              "description": "No miner application found for the provided `miner_app_id`",
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "$ref": "#/components/schemas/Error"
+                  }
+                }
+              }
+            },
+            "500": {
+              "description": "Unexpected error",
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "$ref": "#/components/schemas/Error"
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "/user/miner/instance/list": {
+        "get": {
+          "summary": "Get miner instances list.",
+          "security": [
+            { "UserApiKey": [] }
+          ],
+          "responses": {
+            "200": {
+              "description": "A list of currently working miner instances and their descriptions.",
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "$ref": "#/components/schemas/MinerInstanceList"
+                  }
+                }
+              }
+            },
+            "401": {
+              "description": "Unauthorized",
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "$ref": "#/components/schemas/Error"
+                  }
+                }
+              }
+            },
+            "500": {
+              "description": "Unexpected error",
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "$ref": "#/components/schemas/Error"
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "/user/miner/instance/statistics/list": {
+        "get": {
+          "summary": "Get mining statistics from all miner instances.",
+          "security": [
+            { "UserApiKey": [] }
+          ],
+          "responses": {
+            "200": {
+              "description": "A list of objects containing mining infomation.",
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "$ref": "#/components/schemas/MinerStatisticsList"
+                  }
+                }
+              }
+            },
+            "401": {
+              "description": "Unauthorized",
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "$ref": "#/components/schemas/Error"
+                  }
+                }
+              }
+            },
+            "404": {
+              "description": "No miner instances found.",
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "$ref": "#/components/schemas/Error"
+                  }
+                }
+              }
+            },
+            "500": {
+              "description": "Unexpected error",
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "$ref": "#/components/schemas/Error"
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "/user/miner/instance/statistics/{miner_instance_id}": {
+        "get": {
+          "summary": "Get mining statistics from a specified miner instance.",
+          "security": [
+            { "UserApiKey": [] }
+          ],
+          "parameters": [{
+            "in": "path",
+            "name": "miner_instance_id",
+            "required": true,
+            "schema": {
+              "$ref": "#/components/schemas/MinerInstanceId"
+            },
+            "description": "The miner instance ID."
+          }],
+          "responses": {
+            "200": {
+              "description": "An object containing mining infomation.",
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "$ref": "#/components/schemas/MinerStatistics"
+                  }
+                }
+              }
+            },
+            "401": {
+              "description": "Unauthorized",
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "$ref": "#/components/schemas/Error"
+                  }
+                }
+              }
+            },
+            "404": {
+              "description": "No miner instance found for the provided `miner_instance_id`",
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "$ref": "#/components/schemas/Error"
+                  }
+                }
+              }
+            },
+            "500": {
+              "description": "Unexpected error",
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "$ref": "#/components/schemas/Error"
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "/user/miner/instance/update/{miner_instance_id}": {
+          "parameters": [{
+            "in": "path",
+            "name": "miner_instance_id",
+            "required": true,
+            "schema": {
+              "$ref": "#/components/schemas/MinerInstanceId"
+            },
+            "description": "The miner instance ID."
+          }],
+        "put": {
+          "summary": "Send update information to a specified miner instance.",
+          "security": [
+            { "UserApiKey": [] }
+          ],
+          "requestBody": {
+            "description": "Update information sent to be interpreted by the specified miner instance.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MinerInstanceUpdateInfo"
+                }
+              }
+            },
+            "required": true
+          },
+          "responses": {
+            "200": {
+              "description": "Update info sent.",
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "$ref": "#/components/schemas/Response"
+                  }
+                }
+              }
+            },
+            "401": {
+              "description": "Unauthorized",
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "$ref": "#/components/schemas/Error"
+                  }
+                }
+              }
+            },
+            "404": {
+              "description": "No miner instance found for the provided `miner_instance_id`",
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "$ref": "#/components/schemas/Error"
+                  }
+                }
+              }
+            },
+            "500": {
+              "description": "Unexpected error",
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "$ref": "#/components/schemas/Error"
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "/user/miner/instance/delete/{miner_instance_id}": {
+        "delete": {
+          "summary": "Send a delete request to a specified miner instance.",
+          "security": [
+            { "UserApiKey": [] }
+          ],
+          "parameters": [{
+            "in": "path",
+            "name": "miner_instance_id",
+            "required": true,
+            "schema": {
+              "$ref": "#/components/schemas/MinerInstanceId"
+            },
+            "description": "The miner instance ID."
+          }],
+          "responses": {
+            "200": {
+              "description": "Delete request sent.",
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "$ref": "#/components/schemas/Response"
+                  }
+                }
+              }
+            },
+            "401": {
+              "description": "Unauthorized",
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "$ref": "#/components/schemas/Error"
+                  }
+                }
+              }
+            },
+            "404": {
+              "description": "No miner instance found for the provided `miner_instance_id`",
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "$ref": "#/components/schemas/Error"
+                  }
+                }
+              }
+            },
+            "410": {
+              "description": "Miner instance with the provided `miner_instance_id` is checked for deletion",
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "$ref": "#/components/schemas/Error"
+                  }
+                }
+              }
+            },
+            "500": {
+              "description": "Unexpected error",
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "$ref": "#/components/schemas/Error"
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "/admin/mining_statistics/send/{miner_instance_id}": {
+        "put": {
+          "summary": "Send mining statistics of a specified miner instance to the server.",
+          "security": [
+            { "AdminApiKey": [] }
+          ],
+          "parameters": [{
+            "in": "path",
+            "name": "miner_instance_id",
+            "required": true,
+            "schema": {
+              "$ref": "#/components/schemas/MinerInstanceId"
+            },
+            "description": "The miner instance ID."
+          }],
+          "requestBody": {
+            "description": "Statistics to be sent to the server.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AdminMinerStatistics"
+                }
+              }
+            },
+            "required": true
+          },
+          "responses": {
+            "200": {
+              "description": "A request from server containing request code and optionally update information.",
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "$ref": "#/components/schemas/AdminServerRequest"
+                  }
+                }
+              }
+            },
+            "401": {
+              "description": "Unauthorized",
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "$ref": "#/components/schemas/Error"
+                  }
+                }
+              }
+            },
+            "404": {
+              "description": "No miner instance found for the provided `miner_instance_id`",
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "$ref": "#/components/schemas/Error"
+                  }
+                }
+              }
+            },
+            "500": {
+              "description": "Unexpected error",
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "$ref": "#/components/schemas/Error"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    
+  
+    "components": {
+      "schemas": {
+        "MinerApp": {
+          "type": "object",
+          "required": [
+            "id",
+            "name",
+            "description"
+          ],
+          "properties": {
+            "id": {
+              "$ref": "#/components/schemas/MinerAppId"
+            },
+            "name": {
+              "type": "string"
+            },
+            "description": {
+              "type": "string"
+            }
+          }
+        },
+        "MinerAppList": {
+          "type": "array",
+          "items": {
+            "$ref": "#/components/schemas/MinerApp"
+          }
+        },
+        "MinerAppId": {
+          "type": "number"
+        },
+  
+        "MinerInstance": {
+          "type": "object",
+          "required": [
+            "id",
+            "name",
+            "miner_app_id",
+            "description"
+          ],
+          "properties": {
+            "id": {
+              "$ref": "#/components/schemas/MinerInstanceId"
+            },
+            "name": {
+              "type": "string"
+            },
+            "miner_app_id": {
+              "$ref": "#/components/schemas/MinerAppId"
+            },
+            "description": {
+              "type": "string"
+            }
+          }
+        },
+        "MinerInstanceList": {
+          "type": "array",
+          "items": {
+            "$ref": "#/components/schemas/MinerInstance"
+          }
+        },
+        "MinerInstanceId": {
+          "type": "number"
+        },
+  
+        "MinerInstanceInputInfo": {
+          "type": "object",
+          "required": [
+            "input_arguments"
+          ],
+          "properties": {
+            "input_arguments": {
+              "type": "string"
+            }
+          }
+        },
+  
+        "MinerInstanceUpdateInfo": {
+          "type": "object",
+          "required": [
+            "update_info"
+          ],
+          "properties": {
+            "update_info": {
+              "type": "string"
+            }
+          }
+  
+        },
+  
+        "MinerStatistics": {
+          "type": "object",
+          "required": [
+            "miner_instance_id",
+            "stats"
+          ],
+          "properties": {
+            "miner_instance_id": {
+              "$ref": "#/components/schemas/MinerInstanceId"
+            },
+            "stats": {
+              "type": "object"
+            }
+          }
+        },
+        "MinerStatisticsList": {
+          "type": "array",
+          "items": {
+            "$ref": "#/components/schemas/MinerStatistics"
+          }
+        },
+  
+  
+        "AdminMinerStatistics": {
+          "type": "object",
+          "required": [
+            "end_code",
+            "stats"
+          ],
+          "properties": {
+            "end_code": {
+              "description": "Code indicating whether miner instance process has ended.",
+              "type": "boolean"
+            },
+            "stats": {
+              "type": "string"
+            }
+          }
+        },
+        "AdminServerRequest": {
+          "type": "object",
+          "required": [
+            "request_code"
+          ],
+          "properties": {
+            "request_code": {
+              "description": "Code indicating the type of request.",
+              "type": "integer"
+            },
+            "update_info": {
+              "type": "string"
+            }
+          }
+        },
+  
+        "Response": {
+          "type": "object",
+          "required": [
+            "message"
+          ],
+          "properties": {
+            "message": {
+              "description": "Response message.",
+              "type": "string"
+            }
+          }
+        },
+        "Error": {
+          "type": "object",
+          "required": [
+            "message"
+          ],
+          "properties": {
+            "message": {
+              "description": "Error message",
+              "type": "string"
+            }
+          }
+        }
+      },
+      "securitySchemes": {
+        "UserApiKey": {
+          "type": "apiKey",
+          "in": "header",
+          "name": "X-API-Key",
+          "description": "User API key."
+        },
+        "AdminApiKey": {
+          "type": "apiKey",
+          "in": "header",
+          "name": "X-API-Key",
+          "description": "Admin API key."
+        }
+      }
+    }
+  }
