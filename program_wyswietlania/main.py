@@ -116,6 +116,7 @@ current_miner_name = ''
 # try:
 draw.rectangle((0,0,disp.width,disp.height), outline=0, fill=0)
 while True:
+    time.sleep(0.05)
     disp.LCD_ShowImage(image,0,0)
     (_, _, width, height) = font.getbbox("Sample text")
     draw.rectangle((0,0,disp.width,disp.height), outline=0, fill=0)
